@@ -3,6 +3,8 @@ This script is used to compute the ground truth for datasets, e.g., Deep100M
 
 Usage:
     python compute_ground_truth.py --dbname Deep1M 
+    python compute_ground_truth.py --dbname GLOVE
+    python compute_ground_truth.py --dbname SPACEV1M
     python compute_ground_truth.py --dbname GNN1M 
     python compute_ground_truth.py --dbname SBERT_NQ1M  
     python compute_ground_truth.py --dbname SBERT500M  # compute all results linearly, or merge results after individual batch search
@@ -30,7 +32,7 @@ import re
 import argparse 
 import gc
 import faiss
-from datasets import read_deep_fbin, read_deep_ibin, write_deep_fbin, \
+from datasets import read_deep_fbin, read_deep_ibin, read_spacev_int8bin, write_deep_fbin, \
     write_deep_ibin, mmap_bvecs_FB, mmap_bvecs_SBERT, mmap_bvecs_GNN, mmap_bvecs_Journal
 
 from multiprocessing.dummy import Pool as ThreadPool
@@ -67,6 +69,82 @@ if dbname.startswith('Deep'):
     nb, D = xb.shape # same as SIFT
     query_num = xq.shape[0]
     print('query shape: ', xq.shape)
+
+elif dbname.startswith('GLOVE'):
+     
+    dbsize = 2 # in million
+    dim = 300
+    dataset_dir = './GLOVE_840B_300d'
+    txt_dir = os.path.join(dataset_dir, 'glove.840B.300d.txt')
+    db_fbin_dir = os.path.join(dataset_dir, 'glove.840B.300d.fbin')
+    query_fbin_dir = os.path.join(dataset_dir, 'query_10K.fbin')
+        
+    if not os.path.exists(db_fbin_dir) or not os.path.exists(query_fbin_dir):
+        print("Converting GloVe txt to fbin...")
+        vectors = []
+        with open(txt_dir, 'r') as inputfile:
+            for i_row, row in enumerate(inputfile):
+                row = row.strip()
+                parts = row.split(" ")
+                token = parts[0]
+                print(f"token {i_row}: ", token)
+                vec = np.asarray(parts[-dim:], dtype=np.float32)
+                if vec.shape[0] == dim and not np.isnan(vec).any():
+                    # print("vec: ", vec)
+                    vectors.append(vec)
+        
+        vectors = np.array(vectors, dtype=np.float32)
+        vectors = vectors.reshape(-1, dim)
+        print("vectors shape: ", vectors.shape)
+
+        nq = 10000
+        assert vectors.shape[0] >= dbsize * 1000 * 1000 + nq
+        # use the first 10K as queries
+        xq = vectors[:nq]
+        xb = vectors[nq: nq + dbsize * 1000 * 1000]
+        print("xb shape: ", xb.shape)
+        print("xq shape: ", xq.shape)
+
+        
+        write_deep_fbin(db_fbin_dir, xb)
+        write_deep_fbin(query_fbin_dir, xq)
+ 
+    xb = read_deep_fbin(db_fbin_dir)
+    xq = read_deep_fbin(query_fbin_dir)
+    
+    # Wenqi: load xq to main memory and reshape
+    xq = xq.astype('float32').copy()
+    xq = np.array(xq, dtype=np.float32)
+
+    nb, D = xb.shape 
+    query_num = xq.shape[0]
+    print('query shape: ', xq.shape)
+
+elif dbname.startswith('SPACEV'):
+    """  
+    >>> vec_count = struct.unpack('i', fvec.read(4))[0]
+    >>> vec_count
+    1402020720
+    >>> vec_dimension = struct.unpack('i', fvec.read(4))[0]
+    >>> vec_dimension
+    100
+    """
+    dbsize = int(dbname[6:-1])
+    dataset_dir = '/mnt/scratch/wenqi/Faiss_experiments/SPACEV'
+    xb = read_spacev_int8bin(os.path.join(dataset_dir, 'vectors_all.bin'))
+    xq = read_spacev_int8bin(os.path.join(dataset_dir, 'query_10K.bin'))
+
+    # trim xb to correct size
+    xb = xb[:dbsize * 1000 * 1000]
+   
+    # Wenqi: load xq to main memory and reshape
+    xq = xq.astype('float32').copy()
+    xq = np.array(xq, dtype=np.float32)
+
+    nb, D = xb.shape 
+    query_num = xq.shape[0]
+    print('query shape: ', xq.shape) 
+
 elif dbname.startswith('FB'):
     # FB1M to FB1000M
     dataset_dir = './Facebook_SimSearchNet++'

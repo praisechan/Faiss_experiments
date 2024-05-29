@@ -193,3 +193,18 @@ if __name__ == "__main__":
 				CPU_energy_per_query_mJ[dbname][n], GPU_FPGA_energy_per_query_mJ[dbname][n],
 				GPU_energy_per_query_mJ[dbname][n], FPGA_energy_per_query_mJ[dbname][n],
 				CPU_energy_per_query_mJ[dbname][n] / GPU_FPGA_energy_per_query_mJ[dbname][n]))
+	
+	
+	table_str = []
+	for dbname in CPU_energy_per_query_mJ:
+		
+		print_dbmae = dbname.replace('RALM-S', 'SYN-512').replace('RALM-L', 'SYN-1024')
+		table_str_row = '' + print_dbmae + ' & '
+
+		for n in [1, 4, 16]:#, 64]:
+			table_str_row += ' {:.1f} &&'.format(CPU_energy_per_query_mJ[dbname][n])
+		for n in [1, 4, 16]: #, 64]:
+			table_str_row += ' {:.1f} &&'.format(GPU_FPGA_energy_per_query_mJ[dbname][n])
+		table_str_row = table_str_row[:-2] + '\\\\'
+		table_str.append(table_str_row)
+		print(table_str_row)
