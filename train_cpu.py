@@ -34,6 +34,10 @@ elif FLAGS.index == "IVF":
             os.system("python bench_polysemous_1bn.py 0 {} OPQ{},IVF{},PQ{} nprobe=1".format(
                     FLAGS.dataset, FLAGS.PQ, 2 ** i, FLAGS.PQ))
     else:
-        for i in IVF_range:
-            os.system("python bench_polysemous_1bn.py 0 {} IVF{},PQ{} nprobe=1".format(
-                    FLAGS.dataset, 2 ** i, FLAGS.PQ))
+        os.system("python bench_polysemous_1bn.py --on_disk 0 --dbname {} --index_key IVF{},PQ{} --parametersets 'nprobe=1'".format(
+                    FLAGS.dataset, 2 ** 12, FLAGS.PQ))
+        # for i in IVF_range:
+        #     os.system("python bench_polysemous_1bn.py --on_disk 0 --dbname {} --index_key IVF{},PQ{} --parametersets 'nprobe=1'".format(
+        #             FLAGS.dataset, 2 ** i, FLAGS.PQ))
+            # os.system("python bench_polysemous_1bn.py 0 {} IVF{},PQ{} nprobe=1".format(
+            #         FLAGS.dataset, 2 ** i, FLAGS.PQ))

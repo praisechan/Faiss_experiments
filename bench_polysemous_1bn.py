@@ -77,9 +77,11 @@ print("io_flags: ", io_flags)
 
 
 if n_shards is not None and shard_id is not None:
-    tmpdir = './trained_CPU_indexes/bench_cpu_{}_{}_{}shards'.format(dbname, index_key, n_shards)
+    # tmpdir = './trained_CPU_indexes/bench_cpu_{}_{}_{}shards'.format(dbname, index_key, n_shards)
+    tmpdir = '/home/juchanlee/Chameleon-RAG-Acceleration/dataset/bench_cpu_{}_{}_{}shards'.format(dbname, index_key, n_shards)
 else:
-    tmpdir = './trained_CPU_indexes/bench_cpu_{}_{}'.format(dbname, index_key)
+    # tmpdir = './trained_CPU_indexes/bench_cpu_{}_{}'.format(dbname, index_key)
+    tmpdir = '/home/juchanlee/Chameleon-RAG-Acceleration/dataset/bench_cpu_{}_{}'.format(dbname, index_key)
 
 if not os.path.isdir(tmpdir):
     print("%s does not exist, creating it" % tmpdir)
@@ -96,9 +98,12 @@ print("Preparing dataset", dbname)
 if dbname.startswith('SIFT'):
     # SIFT1M to SIFT1000M
     dbsize = int(dbname[4:-1])
-    xb = mmap_bvecs('bigann/bigann_base.bvecs')
-    xq = mmap_bvecs('bigann/bigann_query.bvecs')
-    xt = mmap_bvecs('bigann/bigann_learn.bvecs')
+    xb = mmap_fvecs('./bigann/sift/sift_base.fvecs')
+    xq = mmap_fvecs('./bigann/sift/sift_query.fvecs')
+    xt = mmap_fvecs('./bigann/sift/sift_learn.fvecs')
+    # xb = mmap_bvecs('bigann/bigann_base.bvecs')
+    # xq = mmap_bvecs('bigann/bigann_query.bvecs')
+    # xt = mmap_bvecs('bigann/bigann_learn.bvecs')
 
     # trim xb to correct size
     xb = xb[:dbsize * 1000 * 1000]
